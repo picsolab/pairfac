@@ -1,5 +1,4 @@
 import os
-
 from scipy import sparse
 import os.path
 import numpy as np
@@ -29,14 +28,12 @@ from heapq import heappush, heappop, heapify
 from collections import defaultdict
 import copy
 
-
 from pairfac import PAIRFAC
 from pairfac import SDCDT
-from sktensor import dtensor, cp_als
 global CLAMPING_THRESHOLD
 CLAMPING_THRESHOLD= 0
 
-PROJECT_DIR = ''
+PROJECT_DIR = '/media/ext01/xidao/project/hipairfac'
 EPSILON = 1e-5
 
 import logging
@@ -124,12 +121,18 @@ def read_domain_data(source1,source2,dims,domain,type,case_study,k, nb_data_poin
     sc.stop()
     return idx_list_all, value_list_X,value_list_Y,value_list_ZX,value_list_ZY,value_list_S
 
+def construct_tensor(value_list, value_index, idx_list, dims):
+    return sptensor(tuple(np.asarray(idx_list)[value_index[0]].T), 
+        list(np.asarray(value_list)[value_index[0]]),shape=dims, dtype=np.float)
+
 def run_case_study():
     iter_cnt = 10
     nb_trial = 3 
     
     alg_names = [PAIRFAC]
     alg_names = [SDCDT]
+    iters = [iter_cnt] * len(alg_names) 
+
     if alg_names[0].__name__ in ["SDCDT"]:
         distance = int(sys.argv[1])
         alpha = float(sys.argv[2])
@@ -150,12 +153,9 @@ def run_case_study():
         gamma_pars = [gamma]
         delta_pars = [1e-8]
 
-    iters = [iter_cnt] * len(alg_names) 
-    CLAMPING_THRESHOLD = 0
-
     case_study = "ha_{}mp4d".format(str(sys.argv[4]))    
     sub_dir = "classification"
-    num_workers = 1
+    num_workers = 2
     nb_points = 40000 # nyc
     train_proportions = [10]
     
@@ -201,30 +201,11 @@ def run_case_study():
         validation_index_1 = validation_index_2 = np.where(Weight == 1)
         test_index_1 = test_index_2 = np.where(Weight == 0)
 
-
-        value_list_X_train = list(np.asarray(value_list_X)[train_index_1[0]])
-        value_list_Y_train = list(np.asarray(value_list_Y)[train_index_1[0]])
-        value_list_ZX_train = list(np.asarray(value_list_ZX)[train_index_1[0]])
-        value_list_ZY_train = list(np.asarray(value_list_ZY)[train_index_1[0]])
-        value_list_S_train = list(np.asarray(value_list_S)[train_index_1[0]])
-
-        value_list_X_test = list(np.asarray(value_list_X)[test_index_1[0]])
-        value_list_Y_test = list(np.asarray(value_list_Y)[test_index_1[0]])
-        value_list_ZX_test = list(np.asarray(value_list_ZX)[test_index_1[0]])
-        value_list_ZY_test = list(np.asarray(value_list_ZY)[test_index_1[0]])
-        value_list_S_test = list(np.asarray(value_list_S)[test_index_1[0]])
-
-        value_list_X_validation = list(np.asarray(value_list_X)[validation_index_1[0]])
-        value_list_Y_validation = list(np.asarray(value_list_Y)[validation_index_1[0]])
-        value_list_ZX_validation = list(np.asarray(value_list_ZX)[validation_index_1[0]])
-        value_list_ZY_validation = list(np.asarray(value_list_ZY)[validation_index_1[0]])
-        value_list_S_validation = list(np.asarray(value_list_S)[validation_index_1[0]])
-
-        X_train = sptensor(tuple(np.asarray(idx_list)[train_index_1[0]].T), value_list_X_train,shape=dims, dtype=np.float)
-        Y_train = sptensor(tuple(np.asarray(idx_list)[train_index_1[0]].T), value_list_Y_train,shape=dims, dtype=np.float)
-        ZX_train = sptensor(tuple(np.asarray(idx_list)[train_index_1[0]].T), value_list_ZX_train,shape=dims, dtype=np.float)
-        ZY_train = sptensor(tuple(np.asarray(idx_list)[train_index_1[0]].T), value_list_ZY_train,shape=dims, dtype=np.float)
-        S_train = sptensor(tuple(np.asarray(idx_list)[train_index_1[0]].T), value_list_S_train,shape=dims, dtype=np.float)
+        X_train = construct_tensor(value_list_X, train_index_1, idx_list, dims)
+        Y_train = construct_tensor(value_list_Y, train_index_1, idx_list, dims)
+        ZX_train = construct_tensor(value_list_ZX, train_index_1, idx_list, dims)
+        ZY_train = construct_tensor(value_list_ZY, train_index_1, idx_list, dims)
+        S_train = construct_tensor(value_list_S, train_index_1, idx_list, dims)
 
         non_zero_idxs=np.asarray(idx_list)[train_index_1[0]]
         D_matrix = np.zeros((X_train.shape[0],X_train.shape[0]))
