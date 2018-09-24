@@ -3,10 +3,8 @@ from numpy import zeros, ones, diff, kron, tile, any, all, linalg
 from functools import reduce
 import numpy.linalg as nla
 import time
-from sktensor import ktensor
-from sktensor import dtensor,cp_als
+from sktensor import sptensor, ktensor, dtensor,cp_als
 from sktensor.core import khatrirao
-from sktensor import sptensor
 import pandas as pd
 import pdb
 import logging

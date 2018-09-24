@@ -13,13 +13,10 @@ import scipy as sp
 import pandas as pd
 from numpy import random
 import pdb
-from sktensor import ktensor
-from sktensor import dtensor
 from sktensor.core import khatrirao
 from sktensor.core import teneye
-from sktensor import sptensor
 from sktensor.sptensor import fromarray
-from sktensor import dtensor, cp_als
+from sktensor import sptensor, ktensor, dtensor, cp_als
 
 from random import randint
 from pyspark import SparkContext, SparkConf
@@ -348,7 +345,6 @@ class TensorFactorization_Base(object):
         -------
         [U] : Obtained factor matrix for each tensor
         [w] : Obtained weight vector for each tensor
-        [RMSE_test, RMSE_validation] : RMSE for testing and validation set
         [cost_log] : the convergence log
         """
         self.factor_matrix_name = str(self.__class__.__name__)+"_layer_{}_distance_" + str(distance) + "_seed_" + str(bootstrap_seed) + "_{}" 

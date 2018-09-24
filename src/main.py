@@ -16,12 +16,9 @@ import sys
 import pandas as pd
 from numpy import random
 import pdb
-from sktensor import ktensor
-from sktensor import dtensor
 from sktensor.core import khatrirao
-from sktensor import sptensor
 from sktensor.sptensor import fromarray
-from sktensor import dtensor, cp_als
+from sktensor import ktensor, dtensor, sptensor
 
 from pyspark import SparkContext, SparkConf
 from heapq import heappush, heappop, heapify
@@ -112,7 +109,7 @@ def run_case_study():
     nb_trial = 3 
     
     alg_names = [PAIRFAC]
-    alg_names = [SDCDT]
+    # alg_names = [SDCDT]
     iters = [iter_cnt] * len(alg_names) 
 
     if alg_names[0].__name__ in ["SDCDT"]:
@@ -136,12 +133,31 @@ def run_case_study():
         delta_pars = [1e-8]
 
     case_study = "ha_{}mp4d".format(str(sys.argv[4]))    
+    case_study = "wpi_{}mp4d".format(str(sys.argv[4])) 
     sub_dir = "classification"
     num_workers = 2
     nb_points = 40000 # nyc
     train_proportions = [10]
+    layers = [0]
     
     _type = "function"   
+
+
+    if case_study.startswith("wpi_"):
+        nb_points = 4000        
+        dims = [10, 59, 2]
+        dims = [266, 59, 4, 10]
+        if case_study.endswith("4d"):
+            dims = [376,58,7,10]
+            if "5" in case_study:
+                dims = [266, 59, 4, 10]
+            if "6" in case_study:
+                dims = [408, 68, 4, 10]
+        domain = "math"
+        source1 = "good"
+        source2 = "bad"
+        R_set = {0:6}
+        R_check = 6
 
     if case_study.startswith("ha_"):
         nb_points = 4000        
@@ -149,7 +165,6 @@ def run_case_study():
         domain = "mooc"
         source1 = "good"
         source2 = "bad"        
-        layers = [0]
         R_set = {0:6}
         R_check = 6
         
