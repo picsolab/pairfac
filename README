@@ -1,0 +1,2 @@
+Install the tensor arithmatic dependency scikit
+python -m pip install scikit-tensor -U
