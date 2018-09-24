@@ -36,13 +36,13 @@ from sktensor import dtensor, cp_als
 global CLAMPING_THRESHOLD
 CLAMPING_THRESHOLD= 0
 
+PROJECT_DIR = ''
+EPSILON = 1e-5
+
 import logging
 logging.basicConfig(level=logging.INFO)
 _log = logging.getLogger('TF')
 
-
-PROJECT_DIR = '/media/ext01/xidao/project/hipairfac'
-EPSILON = 1e-5
 
 
 def clampping(x):
@@ -124,7 +124,7 @@ def read_domain_data(source1,source2,dims,domain,type,case_study,k, nb_data_poin
     sc.stop()
     return idx_list_all, value_list_X,value_list_Y,value_list_ZX,value_list_ZY,value_list_S
 
-def _run_case_study():
+def run_case_study():
     iter_cnt = 10
     nb_trial = 3 
     
@@ -235,13 +235,14 @@ def _run_case_study():
                 progress = cur_para_index*1.0 / len_paraset
                 cur_para_index += 1
                 _log.info('[{}] Running {}...'.format(alg_names[0].__name__,progress))
-                # sc.clearFiles()
                 alg = alg_name()
                 Lambda = list(each_lambda)
-                P_all = None
                 cur_paras = '_'.join([str(x) for x in each_lambda])
                 fname = 'weight_s_t_2_{}_layer_0_distance_{}_seed_{}_R_{}'.format(alg.__class__.__name__, distance,bootstrap_seed,R_check)
-                directory_ = PROJECT_DIR + "src/dtenfac/output_" + k + "_"+sub_dir+""
+                directory_ = PROJECT_DIR + "/output/output_" + k + "_"+sub_dir+""
+                if not os.path.exists(directory_):
+                    os.makedirs(directory_)
+
                 layer_fileName = directory_ + "/weights/" + str(cur_paras) + "/" + str(fname)
                 
                 embeddings_dir = directory_ + "/embeddings/"+str(alg_names[0].__name__)+"/"+str(bootstrap_seed)+"/" + cur_paras
@@ -250,8 +251,6 @@ def _run_case_study():
                 weights_dir = directory_ + "/weights/" + cur_paras
                 if not os.path.exists(weights_dir):
                     os.makedirs(weights_dir)
-
-                _log.info(layer_fileName)
                 if os.path.exists(layer_fileName):
                     _log.info("{} exists".format(layer_fileName))
                     continue
@@ -270,6 +269,6 @@ def _run_case_study():
 
 if __name__ == '__main__':
 
-    _run_case_study()
+    run_case_study()
 
 

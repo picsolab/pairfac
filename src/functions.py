@@ -18,6 +18,7 @@ import random
 from termcolor import colored
 import spm1d
 
+PROJECT_DIR = '/media/ext01/xidao/project/hipairfac'
 
 
 def jtnorm_fro_err_nways(self, X, Y, X_all, Y_all, norm_X, norm_Y):
@@ -44,80 +45,42 @@ def jtnorm_fro_err_nways(self, X, Y, X_all, Y_all, norm_X, norm_Y):
 
     return cost
 
-def saveCSV(data, R,K,ground_truth_k,alpha, beta, gamma, noise,fname, case_study = "python_alto", ranking = False):
-    folder_loc = "output_two_layer" 
-    folder_loc = "output_two_layer_toy"  
+def saveCSV(data, R,K,ground_truth_k,alpha, beta, gamma, noise,fname, case_study = "python_alto", ranking = False, sub_dir = "classification"):
 
-    folder_loc = "output_java_classification"
-    if ranking:
-        sub_dir = "ranking"
-    else:
-        sub_dir = "classification"
-
-    directory_ = "/media/ext01/xidao/project/hipairfac/src/dtenfac/output_"+case_study+"_"+sub_dir+""
-
-    folder_loc = directory_ 
+    folder_loc = PROJECT_DIR + "/output/output_"+case_study+"_"+sub_dir+""
     fileName = folder_loc + "/" + str(fname)+ "_R_" + str(R) + "_gr_" +str(ground_truth_k) + "_k_"+ str(K)+ "_alpha_" + str(alpha)+ "_beta_" + str(beta)+  "_gamma_" + str(gamma) + "_noise_" + str(noise)
     pd.DataFrame(data).to_csv(fileName,sep=',',index=False,header=True) 
 
-def saveFileLambda(data, R,K,Lambda, fname, case_study = "python_alto", ranking = False):
-    if ranking:
-        sub_dir = "ranking"
-    else:
-        sub_dir = "classification"
+def saveFileLambda(data, R,K,Lambda, fname, case_study = "python_alto", ranking = False, sub_dir = "classification"):
+    
 
-    directory_ = "/media/ext01/xidao/project/hipairfac/src/dtenfac/output_"+case_study+"_"+sub_dir+""
+    folder_loc = PROJECT_DIR + "/output/output_"+case_study+"_"+sub_dir+""
 
-    folder_loc = directory_ 
     paras = '_'.join([str(x) for x in Lambda])
     fileName = folder_loc + "/" + str(fname)+ "_R_" + str(R)
     pd.DataFrame(data).to_csv(fileName,sep=',',index=False,header=True) 
-
-def readFileLambda(R,K,Lambda, fname):
-    paras = '_'.join([str(x) for x in Lambda])
-    f = open("output_two_layer_case_study/" + str(fname)+ "_R_" + str(R) + "_k_"+ str(K)+"_" +paras)
-    l = [ map(float,line.split(',')) for line in f ]
-    return np.asarray(l)
     
-def saveAllFactorMatricesLambda(U_all, R,K,Lambda, iteration,fname, case_study = "python_alto", ranking = False):
+def saveAllFactorMatricesLambda(U_all, R,K,Lambda, iteration,fname, case_study = "python_alto", ranking = False, sub_dir = "classification"):
 
-    if ranking:
-        sub_dir = "ranking"
-    else:
-        sub_dir = "classification"
-
-    directory_ = "/media/ext01/xidao/project/hipairfac/src/dtenfac/output_"+case_study+"_"+sub_dir+""
+    folder_loc = PROJECT_DIR + "/output/output_"+case_study+"_"+sub_dir+""
     paras = '_'.join([str(x) for x in Lambda])
     for i in range(len(U_all)):
-        fileName = "{0}/factor_matrices/_U{1}_R{2}_k_{3}_{4}_iter_{5}_{6}".format(directory_, i, R, K, paras, iteration, fname)
+        fileName = "{0}/factor_matrices/_U{1}_R{2}_k_{3}_{4}_iter_{5}_{6}".format(folder_loc, i, R, K, paras, iteration, fname)
         pd.DataFrame(U_all[i]).to_csv(fileName,sep=',',index=False,header=False)
 
-def saveProjectionLambda(P_X, P_Y, R,K,Lambda, iteration,fname, case_study = "python_alto", ranking = False):
-    folder_loc = "output_two_layer" 
-    folder_loc = "output_two_layer_toy"  
+def saveProjectionLambda(P_X, P_Y, R,K,Lambda, iteration,fname, case_study = "python_alto", ranking = False, sub_dir = "classification"):
 
-    folder_loc = "output_java_classification"
-    if ranking:
-        sub_dir = "ranking"
-    else:
-        sub_dir = "classification"
+    folder_loc = PROJECT_DIR + "/output/output_"+case_study+"_"+sub_dir+""
 
-    directory_ = "/media/ext01/xidao/project/hipairfac/src/dtenfac/output_"+case_study+"_"+sub_dir+""
-
-    folder_loc = directory_ 
     paras = '_'.join([str(x) for x in Lambda])
     fileName = folder_loc + "/projection_matrices/projection_X_" + str(R) + "_k_" + str(K)+ "_" +paras+ "_iter_" + str(iteration) + "_" + str(fname)
-    # print('SAVE TO FILE ' + fileName + '...')
     pd.DataFrame(P_X).to_csv(fileName,sep=',',index=False,header=False)
-
     fileName = folder_loc + "/projection_matrices/projection_Y_" + str(R) + "_k_" + str(K)+ "_" +paras+ "_iter_" + str(iteration) + "_" + str(fname)
-    # print('SAVE TO FILE ' + fileName + '...')
     pd.DataFrame(P_Y).to_csv(fileName,sep=',',index=False,header=False)
 
 def getError(X, F_kten, norm_X):
     
     return norm_X ** 2 + F_kten.norm() ** 2 - 2 * F_kten.innerprod(X)
-    # return error
 
 def norm_fro(X):
     """ Compute the Frobenius norm of a matrix
