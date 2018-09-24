@@ -33,7 +33,7 @@ from pairfac import SDCDT
 global CLAMPING_THRESHOLD
 CLAMPING_THRESHOLD= 0
 
-PROJECT_DIR = '/media/ext01/xidao/project/hipairfac'
+PROJECT_DIR = ''
 EPSILON = 1e-5
 
 import logging
@@ -45,57 +45,17 @@ _log = logging.getLogger('TF')
 def clampping(x):
     return max(x,CLAMPING_THRESHOLD)
 
-def read_domain_data(source1,source2,dims,domain,type,case_study,k, nb_data_points, bootstrap_seed = 0):
 
-    from pprint import pprint
-    from pyspark import SparkConf, SparkContext
-    conf = SparkConf().set("spark.driver.maxResultSize", "10g").setAppName("ReadInData")
-    sc = SparkContext(conf=conf)
-    _log.info(source1)
-    _log.info(source2)
-    # _log.info(dims)
-    _log.info(domain)
-    _log.info(case_study)
-    if case_study == "mg":
-        folder_dir = "content_topic_concept"
-    elif case_study == "od":
-        folder_dir = "month_weekday_neighbor"
-    elif case_study in ["alto","altotb", "sci"]:
-        folder_dir = "stage_app_topic"
-    elif case_study.startswith("wpi_"):
-        folder_dir = "attempt_kc_response" 
-        if case_study.endswith("4d"):
-            folder_dir = "problem_name_kc_problem_view_duration"
-
-    elif case_study.startswith("ha_"):
-        folder_dir = "education_country_daysq" 
-        if case_study.endswith("4d"):
-            folder_dir = "education_country_daysq_age"
-
-    elif case_study.startswith("xt_"):
-        folder_dir = "day_event_source"         
-        if case_study.endswith("4d"):
-            folder_dir = "weekday_hour_event_source"
-    else:
-        folder_dir = "timeHashing_hour_locationHashing"
-    idx_list_file_X = PROJECT_DIR + "/output/"+str(folder_dir)+"/exportR/"+str(source1)+"/"+domain+"_"+type+"_dimensions_grid_"+str(case_study) + "_" +str(bootstrap_seed)+"*"
-    idx_list_file_Y = PROJECT_DIR + "/output/"+str(folder_dir)+"/exportR/"+str(source2)+"/"+domain+"_"+type+"_dimensions_grid_"+str(case_study) + "_" +str(bootstrap_seed)+"*"
-    X_file = PROJECT_DIR + "/output/"+str(folder_dir)+"/exportR/"+str(source1)+"/"+domain+"_"+type+"_values_grid_"+str(case_study) + "_" +str(bootstrap_seed)+"*"
-    Y_file = PROJECT_DIR + "/output/"+str(folder_dir)+"/exportR/"+str(source2)+"/"+domain+"_"+type+"_values_grid_"+str(case_study) + "_" +str(bootstrap_seed)+"*"
+def read_in_data(sc, folder_dir, source, domain, type, case_study, bootstrap_seed, nb_data_points):
+    idx_list_file_X = PROJECT_DIR + "/output/"+str(folder_dir)+"/exportR/"+str(source)+"/"+domain+"_"+type+"_dimensions_grid_"+str(case_study) + "_" +str(bootstrap_seed)+"*"
+    X_file = PROJECT_DIR + "/output/"+str(folder_dir)+"/exportR/"+str(source)+"/"+domain+"_"+type+"_values_grid_"+str(case_study) + "_" +str(bootstrap_seed)+"*"
     X_values = sc.textFile(X_file).repartition(1).map(float).cache()
-    Y_values = sc.textFile(Y_file).repartition(1).map(float).cache()
-    idx_list_str_X = sc.textFile(idx_list_file_X).repartition(1).map(lambda x: '_'.join(i for i in x.split(','))).cache()
-    idx_list_str_Y = sc.textFile(idx_list_file_Y).repartition(1).map(lambda x: '_'.join(i for i in x.split(','))).cache()
-    
+    idx_list_str_X = sc.textFile(idx_list_file_X).repartition(1).map(lambda x: '_'.join(i for i in x.split(','))).cache()    
     idx_list_str_dict_X = idx_list_str_X.zip(X_values).collectAsMap()
-    idx_list_str_dict_Y = idx_list_str_Y.zip(Y_values).collectAsMap()
     idx_list_str_X = idx_list_str_X.zip(X_values).sortBy(lambda a: (a[1]), ascending=False).map(lambda x:x[0]).take(nb_data_points)
-    idx_list_str_Y = idx_list_str_Y.zip(Y_values).sortBy(lambda a: (a[1]), ascending=False).map(lambda x:x[0]).take(nb_data_points)
+    return idx_list_str_X, idx_list_str_dict_X
 
-
-
-    idx_list_all = list(set().union(idx_list_str_X,idx_list_str_Y))
-
+def compute_auxilary_tensor(idx_list_all, idx_list_str_X, idx_list_str_Y, idx_list_str_dict_X, idx_list_str_dict_Y):
     value_list_X = []
     value_list_Y = []
     value_list_ZX = []
@@ -115,15 +75,37 @@ def read_domain_data(source1,source2,dims,domain,type,case_study,k, nb_data_poin
         value_list_ZX.append(diff_X if diff_X > 0 else 0)
         value_list_ZY.append(diff_Y if diff_Y > 0 else 0)
         value_list_S.append(comm)
-
-    gc.collect()
     idx_list_all = [[int(x) for x in idx.split('_')] for idx in idx_list_all]
-    sc.stop()
     return idx_list_all, value_list_X,value_list_Y,value_list_ZX,value_list_ZY,value_list_S
 
 def construct_tensor(value_list, value_index, idx_list, dims):
     return sptensor(tuple(np.asarray(idx_list)[value_index[0]].T), 
         list(np.asarray(value_list)[value_index[0]]),shape=dims, dtype=np.float)
+
+def read_domain_data(source1,source2,dims,domain,type,case_study,k, nb_data_points, bootstrap_seed = 0):
+
+    from pprint import pprint
+    from pyspark import SparkConf, SparkContext
+    conf = SparkConf().set("spark.driver.maxResultSize", "10g").setAppName("ReadInData")
+    sc = SparkContext(conf=conf)
+    if case_study.startswith("wpi_"):
+        folder_dir = "attempt_kc_response" 
+        if case_study.endswith("4d"):
+            folder_dir = "problem_name_kc_problem_view_duration"
+    elif case_study.startswith("ha_"):
+        folder_dir = "education_country_daysq" 
+        if case_study.endswith("4d"):
+            folder_dir = "education_country_daysq_age"
+    else:
+        folder_dir = "timeHashing_hour_locationHashing"
+
+    idx_list_str_X, idx_list_str_dict_X = read_in_data(sc, folder_dir, source1, domain, type, case_study, bootstrap_seed, nb_data_points)
+    idx_list_str_Y, idx_list_str_dict_Y = read_in_data(sc, folder_dir, source2, domain, type, case_study, bootstrap_seed, nb_data_points)
+    idx_list_all = list(set().union(idx_list_str_X,idx_list_str_Y))
+    sc.stop()
+
+    return compute_auxilary_tensor(idx_list_all, idx_list_str_X, idx_list_str_Y, idx_list_str_dict_X, idx_list_str_dict_Y)
+
 
 def run_case_study():
     iter_cnt = 10
